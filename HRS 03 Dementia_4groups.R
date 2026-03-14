@@ -1,25 +1,3 @@
-library(dplyr)
-library(survival)
-library(ggplot2)
-library(broom)
-library(dagitty)
-library(ggdag)
-library(lubridate)
-library(nnet)
-library(sjPlot)
-library(haven)
-library(tableone)
-library(survminer)
-library(forestplot)
-library(knitr)
-library(kableExtra)
-
-df <- read.csv("D:\\R project\\Digital\\dementia\\analysis\\2002-2010hrs_4groups.csv")
-df <- df[,-1]
-df_cognition <- read_dta("D:\\R project\\data\\hrs\\cogfinalimp_9520wide.dta")
-table(df_cognition$cogfunction2010)
-df$age_sq <- (df$age)^2
-
 #event analysis
 df_cognition$hhid <- sub("^0", "", df_cognition$hhid)
 df_cognition$hhidpn <- paste(as.character(df_cognition$hhid), as.character(df_cognition$pn), sep = "")
@@ -228,7 +206,6 @@ theme_table <- theme_minimal() +
     plot.margin = margin(5, 5, 5, 5)
   )
 
-# 1. 标签列
 p_labels <- ggplot(plot_data, aes(y = row)) +
   geom_text(aes(x = 1, label = group), size = 4, hjust = 1) +
   scale_x_continuous(limits = c(0, 1), expand = c(0, 0)) +
@@ -236,18 +213,15 @@ p_labels <- ggplot(plot_data, aes(y = row)) +
   theme_table +
   theme(plot.margin = margin(10, 1, 10, 10))
 
-# 2. 森林图 - 颜色修复版
 p_forest <- ggplot(plot_data, aes(x = hr, y = row, color = group)) + 
   geom_vline(xintercept = 1, linetype = "dashed", color = "black", linewidth = 0.6) +
   
   geom_errorbarh(data = plot_data[!plot_data$is_ref, ],
                  aes(xmin = lower, xmax = upper), height = 0.2, 
                  linewidth = 0.8) +
-  
-  # 点 (Ref 组也会根据 scale_color_manual 正确着色)
+
   geom_point(size = 4, shape = 18) +
-  
-  # 【关键】：因为 blue_palette 现在有了名字，ggplot 会自动匹配 group 名字和颜色
+
   scale_color_manual(values = blue_palette) +
   
   scale_x_log10(limits = c(0.3, 1.2), breaks = c(0.3, 0.5, 1.0), expand = c(0, 0)) +
@@ -268,7 +242,6 @@ p_forest <- ggplot(plot_data, aes(x = hr, y = row, color = group)) +
     legend.position = "none"
   )
 
-# 3, 4, 5. 文字列 (保持不变)
 p_hr <- ggplot(plot_data, aes(y = row)) +
   geom_text(aes(x = 0, label = hr_text), size = 4, hjust = 0.5) +
   scale_x_continuous(limits = c(-0.5, 0.5)) +
@@ -287,20 +260,12 @@ p_pval <- ggplot(plot_data, aes(y = row)) +
   scale_y_continuous(breaks = y_breaks, limits = y_limits, expand = c(0, 0)) +
   ggtitle("P value") + theme_table
 
-# 组合
 final_plot <- plot_grid(
   p_labels, p_forest, p_hr, p_ci, p_pval,
   ncol = 5,
   rel_widths = c(1.5, 2.2, 0.5, 0.9, 0.5),  
   align = "h"
 )
-
-print(final_plot)
-
-ggsave("D:\\R project\\Digital\\dementia\\analysis\\dementia_forest_fixed_colors.jpeg", 
-       final_plot, width = 11, height = 4, dpi = 600)
-
-
 
 ####sensitivity analysis####
 #lagged analysis
